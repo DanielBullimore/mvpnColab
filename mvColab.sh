@@ -37,9 +37,18 @@ mvCheck10() {
 		nft add table inet mvcolab
 		nft delete table inet mvcolab;
 	elif [[ "Connected" = $(mullvad status -v | head -1) ]]; then
-		
 	  #get table list and check if mvcolab table exists, only act if it does not.
 		if ! [[ "table inet mvcolab" = $(nft list tables | grep "mvcolab") ]] ; then
+			#load config file
+			SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+			#is configured for gid based permissions
+			ALLOW_GID=`echo $(cat $SCRIPT_DIR/mvColab.conf | head -1 ) | cut -d'=' -f2`
+			gid=`echo $(getent group mvpn) | cut -d':' -f3`
+			if [ "true" = $ALLOW_GID ];  then
+				echo 'add rule inet mvcolab output oif "wg0-mullvad" meta skgid != $allowGid reject comment "           (GID: allow only mvpn user group)"' | cat > $SCRIPT_DIR/mvColabGID
+				else
+				`echo "#" | cat > $SCRIPT_DIR/mvColabGID`
+			fi
 		  #grab the dns server ip
 		  resolver=`echo $(cat /etc/resolv.conf | head -1) | cut -d' ' -f2`
 		  #split the wireguard tunnel details up
@@ -48,15 +57,12 @@ mvCheck10() {
 			port=`echo $status | cut -d':' -f2 | cut -d'/' -f1`
 			protocol=`echo $status | cut -d':' -f2 | cut -d'/' -f2`
 		  #add security layer firewall with tunnel details
-			dir="$(pwd)/mvcolabNFT"
-			nft -f $dir -D wireguard=$ip -D wgPort=$port -D wgDNS=$resolver
+			nft -I $SCRIPT_DIR -f $SCRIPT_DIR/mvcolabNFT -D wireguard=$ip -D wgPort=$port -D wgDNS=$resolver -D allowGid=$gid
 		fi
 	fi
 }
-
 #Check status every 5 seconds for one minute
 for (( i=0; $i<=11; i++ )) do
 	mvCheck10
 	sleep 5
 done
-	
