@@ -1,0 +1,1 @@
+add rule inet mvcolab output oif "wg0-mullvad" meta skgid != $allowGid reject comment "           (GID: allow only mvpn user group)"
