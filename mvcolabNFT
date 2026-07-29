@@ -67,7 +67,8 @@ add chain inet mvcolab output {	type filter hook output priority security; polic
 	####        																																	   #
 	# Allowed Applications / Protocols <should use allowed hosts>                                                                                      #
 		include "mvColabGID" # If ALLOW_GID is true in mvColab.conf ony aplications run by mvpn user group may access the tunnl                        #
-		add rule inet mvcolab output oif "wg0-mullvad" tcp dport $outPorts accept comment "           (Allowed Ports: only this list of ports)"   #
+		include "mvColabURL" # If ALLOW_HOSTS is true in mv.conf all trafic not routed to Domains in mvAllowUrl will be droped                         # 
+		add rule inet mvcolab output oif "wg0-mullvad" tcp dport $outPorts accept comment "           (Allowed Ports: only this list of ports)"        #
 		add rule inet mvcolab output oif "wg0-mullvad" reject comment "                                 (Draconian)_BLOCK_ALL_OTHER_OUTBOUND_PACKETS"  #
 		add rule inet mvcolab output iif "wg0-mullvad" counter comment "                                (If not zero a breach has occured)"            #
 	####                                                                                                                                               #
