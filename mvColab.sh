@@ -53,6 +53,20 @@ mvCheck10() {
 				else
 				`echo "#" | cat > $SCRIPT_DIR/mvColabGID`
 			fi
+			#is configured for allowed hosts only
+			if [ "true" = $ALLOW_HOSTS ]; then
+				echo 'add rule inet mvcolab output oif "wg0-mullvad" ip daddr != $allowedHosts reject comment "           (Allow Hosts: allow only mvpn user group)"' | cat > $SCRIPT_DIR/mvColabURL
+				#generate ip list of allowed hosts
+				ALLOWED_HOSTS="{"
+				while FILE= read -r line; do
+					ip=`dig +short $line | tail -n 1`
+					ALLOWED_HOSTS+="$ip,"
+				done < $SCRIPT_DIR/mvAllowUrl
+				ALLOWED_HOSTS+="}"
+			else
+				echo '#' | cat > $SCRIPT_DIR/mvColabURL
+			fi
+			
 		  #grab the dns server ip
 		  resolver=`echo $(cat /etc/resolv.conf | head -1) | cut -d' ' -f2`
 		  #split the wireguard tunnel details up
@@ -61,7 +75,7 @@ mvCheck10() {
 			port=`echo $status | cut -d':' -f2 | cut -d'/' -f1`
 			protocol=`echo $status | cut -d':' -f2 | cut -d'/' -f2`
 		  #add security layer firewall with tunnel details
-			nft -I $SCRIPT_DIR -f $SCRIPT_DIR/mvcolabNFT -D wireguard=$ip -D wgPort=$port -D wgDNS=$resolver -D allowGid=$gid -D outPorts="$OUT_PORTS"
+			nft -I $SCRIPT_DIR -f $SCRIPT_DIR/mvcolabNFT -D wireguard=$ip -D wgPort=$port -D wgDNS=$resolver -D allowGid=$gid -D outPorts="$OUT_PORTS" -D allowedHosts=$ALLOWED_HOSTS;
 		fi
 	fi
 }
