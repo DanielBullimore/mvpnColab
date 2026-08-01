@@ -30,13 +30,13 @@
 #                                                                                #
 #       This firewall activates when your Mullvad VPN client is connected.       #
 #       It will block all out bound traffic to the VPN host that is not          #
-#       preconfigured in mvColab.conf and mvAllowUrl. It will also block         #
+#       preconfigured in mvColab.conf and mvAllow files. It will also block      #
 #       all inbound traffic from the host which was not initiated by             #
 #       an outbound connection from your machine.                                #
 #       - this installer will create a usergroup                                 #
 #         it will add a cron file to /etc/cron.d                                 #
 #         the software will add tables tables to nftables                        #
-#	      very restrictive modes will be added to all mvColab files              #
+#	      very restrictive modes will be added to all mvColab files                #
 #                                                                                #
 ##################################################################################
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
