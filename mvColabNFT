@@ -1,0 +1,167 @@
+##################################################################################
+# MIT License
+#
+# Copyright 01/08/2026 Daniel Bullimore
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+##################################################################################
+add table inet mvcolab
+  #///////////////////////////____________________________________________________________________________________________________________________
+ #// OUTPUT SECURITY CHAIN //                                                                                                                    /
+add chain inet mvcolab output {	type filter hook output priority security; policy drop; }#______________________________________________________/
+	#
+	#__________________________
+	#// Local Host Only Loop //
+	#
+	####
+		add rule inet mvcolab output oif "lo" accept
+	####
+	#________________________________
+	#// ICMP                       //
+	#	A subset of NDP is allowed:
+	####
+		add rule inet mvcolab output ip6 daddr ff02::2 icmpv6 type nd-router-solicit icmpv6 code no-route accept comment "             (Router solicitation)"
+		add rule inet mvcolab output ip6 daddr ff02::1:ff00:0/104 icmpv6 type nd-neighbor-solicit icmpv6 code no-route accept comment "(Neighbor solicitation)"
+		add rule inet mvcolab output ip6 daddr fe80::/10 icmpv6 type nd-neighbor-solicit icmpv6 code no-route accept comment "         (Neighbor solicitation)"
+		add rule inet mvcolab output ip6 daddr fe80::/10 icmpv6 type nd-neighbor-advert icmpv6 code no-route accept comment "          (Neighbor advertisement)"
+	####
+	#___________________________________________________________
+	#// DHCPv4 and DHCPv6 requests are always allowed to go out:
+	#####
+	# V4
+		add rule inet mvcolab output udp sport 68 ip daddr 255.255.255.255 udp dport 67 accept comment "                               (DHCPv4: client to server)"
+		#add rule inet mvcolab output udp sport 67 udp dport 68 accept comment "                                                       (Localhost is a DHCP server)"
+	# V6
+		add rule inet mvcolab output ip6 saddr fe80::/10 udp sport 546 ip6 daddr ff02::1:2 udp dport 547 accept comment "              (DHCPv6: client to server)"
+	   #
+	  #/////////////////////////////////////////#
+	 #// Draconian Ruleset for Mulvad Tunnel //#
+	#/////////////////////////////////////////#
+	####################################################################################################################################################
+	# (Wireguard)-Mulvad only # metamark forces the connection to be initiated by root                                                                 #
+		add rule inet mvcolab output ip daddr $wireguard udp dport $wgPort meta mark 0x6d6f6c65 accept                                                 #
+	# Mullvad DNS                                                                                                                                      #
+		add rule inet mvcolab output oif "wg0-mullvad" udp dport {53,443} ip daddr $wgDNS accept comment " (DNS: Mullvad server only)"                 #
+		add rule inet mvcolab output oif "wg0-mullvad" tcp dport {53,443} ip daddr $wgDNS accept comment " (DNS: Mullvad server only)"                 #
+	####        																																	   #
+	# Allow                                                                                                                                            #
+		include "mvColabGID" # If allow_gid is true in mvColab.conf only aplications run by mvpn user group may access the tunnel                      #
+		include "mvColabDOM" # If allow_hosts is true in mv.conf all trafic not routed to domains in mvAllowUrl will be droped                         #
+		include "mvColabTCP" # If allow_tcp_ports={<port>,<port>,..} in mvColab.conf only those ports will be allowed out, set false for no tcp port   #
+		include "mvColabUDP" # If allow_udp_ports={<port>,<port>,..} in mvColab.conf only those ports will be allowed out, set flase for no udp port   #
+	# Deny																																			   #
+		add rule inet mvcolab output oif "wg0-mullvad" reject comment "                                 (Draconian)_BLOCK_ALL_OTHER_OUTBOUND_PACKETS"  #
+		add rule inet mvcolab output iif "wg0-mullvad" counter comment "                                (If not zero a breach has occured)"            #
+	####                                                                                                                                               #
+	####################################################################################################################################################
+	#_________________________________________________________________________________
+	#//LAN any IP in an unroutable network (should be narrowed to known hosts only) //
+	#
+	# IPv4
+		#add rule inet mvcolab output ip daddr 192.168.0.0/16 accept comment "                          (IPv4: Local area net)"
+		#add rule inet mvcolab output ip daddr 10.0.0.0/8 accept comment "                              (IPv4: Local area net)"
+		#add rule inet mvcolab output ip daddr 172.16.0.0/12 accept comment "                           (IPv4: Local area net)"
+		#add rule inet mvcolab output ip daddr 169.254.0.0/16 accept comment "                          (Link-local IPv4 range)"
+	# IPv6
+		add rule inet mvcolab output ip6 daddr fe80::/10 accept comment "                               (IPv6: Link-local IPv6 range)"
+		add rule inet mvcolab output ip6 daddr fc00::/7 accept comment "                                (IPv6: Unique local address (ULA) range)"
+	####
+	#___________________________________________________________________
+	#// Multicast networks: Outgoing to any IP in globally unroutable //
+	#
+	# IPv4
+		add rule inet mvcolab output ip daddr 255.255.255.255/32 accept comment "                       (Multicast: Broadcasts to the local network)"
+		add rule inet mvcolab output ip daddr 224.0.0.0/24 accept comment "                             (Local subnet IPv4 multicast)"
+		add rule inet mvcolab output ip daddr 239.0.0.0/8 accept comment "                              (Administratively scoped IPv4 multicast. E.g. SSDP & mDNS)"
+	# IPv6
+		#add rule inet mvcolab output ip6 daddr ff01::/16 accept comment "                              (Interface-local multicast to single interface on a node)"
+		#add rule inet mvcolab output ip6 daddr ff02::/16 accept comment "                              (Link-local IPv6 multicast IPv6 equivalent of 224.0.0.0/24)"
+		#add rule inet mvcolab output ip6 daddr ff03::/16 accept comment "                              (Realm-local IPv6 multicast)"
+		#add rule inet mvcolab output ip6 daddr ff04::/16 accept comment "                              (Admin-local IPv6 multicast)"
+		#add rule inet mvcolab output ip6 daddr ff05::/16 accept comment "                              (Site-local IPv6 multicast)"
+	####
+	#_________________
+	#// Dracon Eye 	//
+	#
+	####
+		add rule inet mvcolab output counter
+########------------------------------------> End Chain <#
+	
+  #//////////////////////////____________________________________________________________________________________________________________________
+ #/ INPUT SECURITY CHAIN   /                                                                                                                    /
+#______________________________________________________________________________________________________________________________________________/
+add chain inet mvcolab input { type filter hook input priority security; policy drop; }
+	#
+	#________________________
+	#// Localhost Only Loop	#
+	#			#
+		add rule inet mvcolab input iif "lo" accept
+	#			#
+	#########################
+	#____________
+	#// DHCP   //
+	#
+	#### IPv4
+		add rule inet mvcolab input udp sport 67 udp dport 68 accept comment "(dhcp)_ALLOW_RESPONCE"
+		#add rule inet mvcolab input udp sport 68 ip daddr 255.255.255.255 udp dport 67 accept comment "         (Localhost is DHCP server)"
+	#### IPv6
+		add rule inet mvcolab input ip6 saddr fe80::/10 udp sport 547 ip6 daddr fe80::/10 udp dport 546 accept
+	####
+	#____________
+	#// ICMPv6 //
+	####
+		add rule inet mvcolab input ip6 saddr fe80::/10 icmpv6 type nd-router-advert icmpv6 code no-route accept
+		add rule inet mvcolab input ip6 saddr fe80::/10 icmpv6 type nd-redirect icmpv6 code no-route accept
+		add rule inet mvcolab input ip6 saddr fe80::/10 icmpv6 type nd-neighbor-solicit icmpv6 code no-route accept
+		add rule inet mvcolab input icmpv6 type nd-neighbor-advert icmpv6 code no-route accept
+	   #
+	  #/////////////////////////////////////////"
+	 #// Draconian Ruleset for Mulvad Tunnel //"
+	#/////////////////////////////////////////"
+    ############################################################################################################################################################
+		add rule inet mvcolab input ip saddr $wireguard udp sport $wgPort ct state established accept comment "(Wireguard: Connection_To_Mullvad)"             #
+		add rule inet mvcolab input iif "wg0-mullvad" ct state established,related accept comment "            (Statefull Allow)"                              #
+		add rule inet mvcolab input iif "wg0-mullvad" reject comment "                                         (BLOCK ALL OTHER INBOUND PACKETS)"              #
+		add rule inet mvcolab input iif "wg0-mullvad" counter comment "                                        (If not zero a breach has occured)"             #
+    ############################################################################################################################################################
+	#________________________
+	#// Local IP Zones	#
+	####
+		#add rule inet mvcolab input ip saddr 10.0.0.0/8 accept
+		#add rule inet mvcolab input ip saddr 172.16.0.0/12 accept
+		#add rule inet mvcolab input ip saddr 192.168.0.0/16 accept
+		#add rule inet mvcolab input ip saddr 169.254.0.0/16 accept
+		#add rule inet mvcolab input ip6 saddr fe80::/10 accept
+		#add rule inet mvcolab input ip6 saddr fc00::/7 accept
+	####
+	#________________
+	#// Dracon Eye 	#
+	#
+	####
+		add rule inet mvcolab input counter
+########--------------------------------------->End Chain<
+
+
+#  //////////////////////////____________________________________________________________________________________________________________________
+# / FORAWRD SECURITY CHAIN / 															/
+#______________________________________________________________________________________________________________________________________________/
+add chain inet mvcolab forward { type filter hook forward priority security; policy drop; }
+
+
+
