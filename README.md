@@ -2,18 +2,18 @@
 A draconian linux nftables firewall which colaborates with mullvad vpn client
 
 Designed for a zero trust isolated host.
-When you create a VPN (Virtual Private Network) the VPN host has the same level of connection to your machine as any machine on your local lan or wifi (or your cell co. or something pretending to be your cell co. RIP Kevin). Get this straight, I am in no way saying that VPN providers are untrustworthy. However if you are operating at a threat level of paranoid or above unfiltered networking to a machine you do not control is a blunder. A commercial host is likely very responsible, they do employ human beings though. Human beings are subject to temptation.
+When you create a VPN (Virtual Private Network) the VPN host has the same level of connection to your machine as any machine on your local lan or wifi (or your cell co. or something pretending to be your cell co. RIP Kevin). Get this straight, I am in no way saying that VPN providers are untrustworthy. However if you are operating at a threat level of paranoid or above, unfiltered networking to a machine you do not control is a blunder. A commercial host is likely very responsible, they do employ human beings though. Human beings are subject to temptation.
 I have used mullvad vpn client for this example because it's client application uses the nftables firewall.I am not saying I make impenetrable firewalls, I'm not even saying this is a good firewall ruleset. This is an example of how to filter the traffic of your wireguard interface.
 
 _INSTALL_
-mvColabInstaller.sh must be run as root. Download the files [mvColab.conf,mcColab.sh,mvColabNFT,mvColabInstall.sh] and place them in a dedicated directory. Run mvColabInstaller.sh as root. It will create four nft include files [mvColabUDP,mvColabTCP,mvColabGID,mvColabDom] and one allow hosts file [mvAllow]. Sometimes the crond takes awhile to pick up the the file created in /etc/con.d/mvColab. The firewall will now run automatically when your mullvad vpn client connects.
+mvColabInstaller.sh must be run as root. Download the files [mvColab.conf,mcColab.sh,mvColabNFT,mvColabInstall.sh] and place them in a dedicated directory. Run mvColabInstaller.sh as root. It will create four nft include files [mvColabUDP,mvColabTCP,mvColabGID,mvColabDOM] and one allow hosts file [mvAllow]. Sometimes the crond takes awhile to pick up the the file created in /etc/con.d/mvColab. The firewall will now run automatically when your mullvad vpn client connects.
 
 _CONFIGURE_
 mvColab.conf has four options:
 allow_gid - When true the firewall will only allow processes run as usergroup mvpn. When false any process will be allowed.
 allow_hosts - When true the firewall will only allow outbound connections to IP address which the domain names listed in mvAllow file resolve to. When false outbound connections are allowed to any ip.
-tcp_out_ports - When a brace enclosed port list is set e,g, { 80,443,8333 } outbound connections will only be allowed to those TCP ports, When false all TCP ports are allowed.
-udp_out_ports - When a brace enclosed port list is set e,g, { 5555,7777 } outbound connections will only be allowed to those UDP ports, When false all UDP ports are allowed.
+tcp_out_ports - When a brace enclosed port list is set e,g, { 80,443,8333 } outbound connections will only be allowed to those TCP ports, When false no TCP ports are allowed.
+udp_out_ports - When a brace enclosed port list is set e,g, { 5555,7777 } outbound connections will only be allowed to those UDP ports, When false no UDP ports are allowed.
 *The mvAllow file is where allowed hosts should be listed, one host per line.
 **The ruleset prioritises blocking gid and allowing mvpn to continue, then allowing hosts, then allowing ports, then blocking everything not specifically allowed in true draconian style.
 
