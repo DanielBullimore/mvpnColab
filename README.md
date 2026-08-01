@@ -15,6 +15,11 @@ allow_hosts - When true the firewall will only allow outbound connections to IP 
 tcp_out_ports - When a brace enclosed port list is set e,g, { 80,443,8333 } outbound connections will only be allowed to those TCP ports, When false all TCP ports are allowed.
 udp_out_ports - When a brace enclosed port list is set e,g, { 5555,7777 } outbound connections will only be allowed to those UDP ports, When false all UDP ports are allowed.
 *The mvAllow file is where allowed hosts should be listed, one host per line.
+**The ruleset prioritises blocking gid and allowing mvpn to continue, then allowing hosts, then allowing ports, then blocking everything not specifically allowed in true draconian style.
+
+_OPERATION_
+Having configured your options in mvColab.conf and added any domain names to mvAllow. Use the MUllvad client app/cli as usual to connect to a VPN host. Once connection is established check the firewall is operating by running `sudo nft list ruleset` the two tables from mvColabNFT should be among the listed results. If they are not, manually run `sudo mvColab.sh` make note of any error output and kindly raise an issue at https://www.github.com/danielbullimore/mvpnColab. Should there be no error output, ctrl+c and run `sudo nft list ruleset` again. If the tables are now present this is a cron.d problem. I have found a restart fixes it but my debian is non-standard. You could manually `sudo crontab -e` to run mvColab.sh every minute as root.
+If you have enabled allow_gid you will have to start processes requiring VPN access with `sudo -u <user> -g mvpn <command>`. Insure -u <user> is used. It is unwise to run applications or random processes as root! I don't recommend using mvpn group for anything, add no users to it give it control over no binaries,files or directories. Explicitly forcing the user to start processes with the intention of using it over VPN is a designed security feature to stop leaks. Remember if no unintended information gets out then no unintended information can be used against your operation.
 
 _Change Log_
 
