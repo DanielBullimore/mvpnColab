@@ -68,7 +68,7 @@ mvCheck10() {
 				ALLOWED_HOSTS+="}"
 			else
 				ALLOWED_HOSTS="{}"
-				echo '#' | cat > $SCRIPT_DIR/mvColabURL
+				echo '#' | cat > $SCRIPT_DIR/mvColabDOM
 			fi
 			#is configured for outbound tcp ports
 			if ! [ "false" = "$TCP_OUT" ]; then
