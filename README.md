@@ -23,6 +23,8 @@ If you have enabled allow_gid you will have to start processes requiring VPN acc
 
 _Change Log_
 
+02/08/2026 - I have cloned this git to test the software. Having fixed the errors. The software is now in working order on Debian. It depends on head,tail,cut,dig,nft,getent,echo,cat and bash. 
+
 01/08/2026 - Added install script, outbound UDP port list and outbound TCP port list. Renamed some files. The installer sets very restrictive file permissions and creates some files. The cron.d file was difficult to sight in. It does work eventually on its on
 
 29/07/26 - Allowed Hosts: Finished the explicitly allowed hosts feature. When allow_hosts is true in mvColab.conf out bound traffic will only pass the draconian if its destination domain name is in mvAllowUrl file. Combined with Allow_GID and or Out_Ports the user of this firewall can now narrow their VPN traffic to fine control. Allow_Host will break your browsing experience because only allowing connections to the IP listed in a domains DNS record prevents cross scripting from 3rd parties. The browser is blocked from connecting to 3rd party IP on the ethernet level. However if your mission depends on getting data to and from known machines only, Allow_Hosts will prevent those leaks. This VPN+Firewall used with a Privacy Browser might be super stealthy if you don't log into anything? And yes I know a URL is not a domain name. I don't think I'll add too many more features, its getting out of scope for a bash script. Might be nice to come back and write a AAA c++ version. That said, IP lists using [DB.SHBD](https://github.com/DanielBullimore/D.B.SHDB.git) could really crank the usability up.
