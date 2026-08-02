@@ -60,6 +60,6 @@ chmod =0500 $SCRIPT_DIR/mvColabInstall.sh
 PATH=/usr/sbin/:/usr/bin/
 SHELL=/bin/bash
 
-* * * * * root /home/name/mvpnColab/mvColab.sh
+* * * * * root $SCRIPT_DIR/mvColab.sh
 
 EOL`
