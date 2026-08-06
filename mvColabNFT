@@ -67,7 +67,7 @@ add chain inet mvcolab output {	type filter hook output priority security; polic
 		include "mvColabUDP" # If allow_udp_ports={<port>,<port>,..} in mvColab.conf only those ports will be allowed out, set flase for no udp port   #
 	# Deny																																			   #
 		add rule inet mvcolab output oif "wg0-mullvad" reject comment "                                 (Draconian)_BLOCK_ALL_OTHER_OUTBOUND_PACKETS"  #
-		add rule inet mvcolab output iif "wg0-mullvad" counter comment "                                (If not zero a breach has occured)"            #
+		add rule inet mvcolab output oif "wg0-mullvad" counter comment "                                (If not zero a breach has occured)"            #
 	####                                                                                                                                               #
 	####################################################################################################################################################
 	#_________________________________________________________________________________
